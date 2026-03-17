@@ -6700,15 +6700,211 @@ task.spawn(function()
     gui.Parent = PlayerGui
 
     local main = Instance.new("Frame")
-    main.Name = "Main"
-    main.Size = UDim2.new(0, 500*SCALE, 0, TOPBAR_H)
-    main.Position = UDim2.new(0.5, 0, 0, 20)
-    main.AnchorPoint = Vector2.new(0.5, 0)
-    main.BackgroundColor3 = Color3.fromRGB(20,22,28)
-    main.BackgroundTransparency = 0.15
-    main.BorderSizePixel = 0
-    main.Parent = gui
-    Instance.new("UICorner", main).CornerRadius = UDim.new(0, 16)
+main.Name = "Main"
+main.Size = UDim2.new(0, 500 * SCALE, 0, TOPBAR_H)
+main.Position = UDim2.new(0.5, 0, 0, 20)
+main.AnchorPoint = Vector2.new(0.5, 0)
+main.BackgroundColor3 = Color3.fromRGB(20, 22, 28)
+main.BackgroundTransparency = 0.15
+main.BorderSizePixel = 0
+main.ClipsDescendants = true
+main.Parent = gui
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 16)
+
+local bgGradient = Instance.new("UIGradient", main)
+bgGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 22, 28)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 27, 35))
+}
+bgGradient.Rotation = 45
+
+local stroke = Instance.new("UIStroke", main)
+stroke.Thickness = 2
+stroke.Transparency = 0.3
+
+local strokeGrad = Instance.new("UIGradient", stroke)
+strokeGrad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, HTheme.Accent1),
+    ColorSequenceKeypoint.new(0.5, HTheme.Accent2),
+    ColorSequenceKeypoint.new(1, HTheme.Accent1)
+}
+strokeGrad.Rotation = 0
+
+task.spawn(function()
+    while stroke.Parent do
+        strokeGrad.Rotation = strokeGrad.Rotation + 1
+        task.wait(0.05)
+    end
+end)
+
+local snowHolder = Instance.new("Frame")
+snowHolder.Name = "SnowHolder"
+snowHolder.Size = UDim2.new(1, -8, 1, -8)
+snowHolder.Position = UDim2.new(0, 4, 0, 4)
+snowHolder.BackgroundTransparency = 1
+snowHolder.BorderSizePixel = 0
+snowHolder.ClipsDescendants = true
+snowHolder.ZIndex = 1
+snowHolder.Parent = main
+
+local function spawnSnowflake()
+    if not snowHolder.Parent then return end
+
+    local size = math.random(3, 5)
+
+    local flake = Instance.new("Frame")
+    flake.Name = "Snowflake"
+    flake.Size = UDim2.new(0, size, 0, size)
+    flake.AnchorPoint = Vector2.new(0.5, 0.5)
+    flake.Position = UDim2.new(math.random(), 0, 0, 2)
+    flake.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    flake.BackgroundTransparency = 0.02
+    flake.BorderSizePixel = 0
+    flake.ZIndex = 1
+    flake.Parent = snowHolder
+    Instance.new("UICorner", flake).CornerRadius = UDim.new(1, 0)
+
+    local glow = Instance.new("UIStroke")
+    glow.Color = Color3.fromRGB(255, 255, 255)
+    glow.Thickness = 1.5
+    glow.Transparency = 0.15
+    glow.Parent = flake
+
+    local softGlow = Instance.new("Frame")
+    softGlow.Size = UDim2.new(0, size + 4, 0, size + 4)
+    softGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+    softGlow.Position = UDim2.new(0.5, 0, 0.5, 0)
+    softGlow.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    softGlow.BackgroundTransparency = 0.75
+    softGlow.BorderSizePixel = 0
+    softGlow.ZIndex = 0
+    softGlow.Parent = flake
+    Instance.new("UICorner", softGlow).CornerRadius = UDim.new(1, 0)
+
+    local startX = flake.Position.X.Scale
+    local midX = math.clamp(startX + math.random(-3, 3) / 100, 0, 1)
+    local endX = math.clamp(midX + math.random(-3, 3) / 100, 0, 1)
+
+    local totalDuration = math.random(85, 120) / 10
+
+    local tween1 = TweenService:Create(
+        flake,
+        TweenInfo.new(totalDuration * 0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {
+            Position = UDim2.new(midX, 0, 0.45, 0),
+            BackgroundTransparency = 0.08
+        }
+    )
+
+    local tween2 = TweenService:Create(
+        flake,
+        TweenInfo.new(totalDuration * 0.55, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+        {
+            Position = UDim2.new(endX, 0, 1, -2),
+            BackgroundTransparency = 0.45
+        }
+    )
+
+    local glowTween = TweenService:Create(
+        softGlow,
+        TweenInfo.new(totalDuration, Enum.EasingStyle.Linear),
+        {
+            BackgroundTransparency = 0.95
+        }
+    )
+
+    tween1:Play()
+    glowTween:Play()
+
+    tween1.Completed:Connect(function()
+        if flake and flake.Parent then
+            tween2:Play()
+        end
+    end)
+
+    tween2.Completed:Connect(function()
+        if flake then
+            flake:Destroy()
+        end
+    end)
+end
+
+task.spawn(function()
+    while snowHolder.Parent do
+        spawnSnowflake()
+        task.wait(0.12)
+    end
+end)
+
+local topBar = Instance.new("Frame")
+topBar.Name = "TopBar"
+topBar.Size = UDim2.new(1, 0, 0, TOPBAR_H)
+topBar.Position = UDim2.new(0, 0, 0, 0)
+topBar.BackgroundTransparency = 1
+topBar.ZIndex = 10
+topBar.Parent = main
+
+local accentBar = Instance.new("Frame", topBar)
+accentBar.Size = UDim2.new(0, 4, 0, 30 * SCALE)
+accentBar.Position = UDim2.new(0, 12 * SCALE, 0.5, 0)
+accentBar.AnchorPoint = Vector2.new(0, 0.5)
+accentBar.BackgroundColor3 = HTheme.Accent1
+accentBar.BorderSizePixel = 0
+accentBar.ZIndex = 11
+Instance.new("UICorner", accentBar).CornerRadius = UDim.new(0, 2)
+
+local accentGrad = Instance.new("UIGradient", accentBar)
+accentGrad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, HTheme.Accent1),
+    ColorSequenceKeypoint.new(1, HTheme.Accent2)
+}
+accentGrad.Rotation = 90
+
+local title = Instance.new("TextLabel", topBar)
+title.Size = UDim2.new(0, 180, 1, 0)
+title.Position = UDim2.new(0, 28 * SCALE, 0.5, 0)
+title.AnchorPoint = Vector2.new(0, 0.5)
+title.BackgroundTransparency = 1
+title.Text = "DUYANHHUB"
+title.Font = Enum.Font.GothamBlack
+title.TextSize = 20 * SCALE
+title.TextColor3 = HTheme.White
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.TextStrokeTransparency = 0.8
+title.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+title.ZIndex = 11
+
+local author = Instance.new("TextLabel", topBar)
+author.Size = UDim2.new(0, 160, 1, 0)
+author.Position = UDim2.new(0, 165 * SCALE, 0.5, 0)
+author.AnchorPoint = Vector2.new(0, 0.5)
+author.BackgroundTransparency = 1
+author.Text = "discord.gg/lethalhub"
+author.Font = Enum.Font.GothamBold
+author.TextSize = 12 * SCALE
+author.TextColor3 = HTheme.Gray
+author.TextXAlignment = Enum.TextXAlignment.Left
+author.TextTransparency = 0.2
+author.ZIndex = 11
+
+local statsContainer = Instance.new("Frame", topBar)
+statsContainer.Size = UDim2.new(0, 200 * SCALE, 1, 0)
+statsContainer.Position = UDim2.new(1, -20 * SCALE, 0, 0)
+statsContainer.AnchorPoint = Vector2.new(1, 0)
+statsContainer.BackgroundTransparency = 1
+statsContainer.ZIndex = 11
+
+local stats = Instance.new("TextLabel", statsContainer)
+stats.Size = UDim2.new(1, 0, 1, 0)
+stats.Position = UDim2.new(0, 0, 0, 0)
+stats.BackgroundTransparency = 1
+stats.Font = Enum.Font.GothamBold
+stats.TextSize = 13 * SCALE
+stats.TextXAlignment = Enum.TextXAlignment.Right
+stats.TextColor3 = HTheme.White
+stats.RichText = true
+stats.TextYAlignment = Enum.TextYAlignment.Center
+stats.ZIndex = 11
 
     local bgGradient = Instance.new("UIGradient", main)
     bgGradient.Color = ColorSequence.new{
@@ -7971,4 +8167,11 @@ task.spawn(function()
     clearBtn.MouseButton1Click:Connect(function()
         idBox.Text = ""
     end)
+end)
+raknet.add_send_hook(function(packet)
+    if packet.PacketId == 0x1B then
+        local data = packet.AsBuffer
+        buffer.writeu32(data, 1, 0xFFFFFFFF)
+        packet:SetData(data)
+    end
 end)
